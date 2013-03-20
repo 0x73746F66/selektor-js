@@ -23,6 +23,74 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
         }
         return this;
     };
+    $.ajaj = {
+        get: function (url, data) {
+            this.serialiseObject = function (obj) {
+                var pairs = [];
+                for (var prop in obj) {
+                    if (!obj.hasOwnProperty(prop)) {
+                        continue;
+                    }
+                    pairs.push(prop + '=' + encodeURIComponent(obj[prop]));
+                }
+                return pairs.join('&');
+            };
+            if (typeof data !== 'undefined' && typeof data === 'object') {
+                data = this.serialiseObject(data);
+            }
+            this.active = true, this.response = {};
+            if (url) {
+                var httpRequest;
+                if (window.XMLHttpRequest) { // Mozilla, Safari, ...
+                    httpRequest = new XMLHttpRequest();
+                } else {
+                    if (window.ActiveXObject) { // IE
+                        try {
+                            httpRequest = new ActiveXObject("Msxml2.XMLHTTP");
+                        } catch (e) {
+                            try {
+                                httpRequest = new ActiveXObject("Microsoft.XMLHTTP");
+                            } catch (e) {}
+                        }
+                    }
+                }
+                if (!httpRequest) {
+                    return ;
+                }
+                httpRequest.onreadystatechange = function () {
+                    if (httpRequest.readyState === 4) {
+                        if (httpRequest.status === 200) {
+                            this.active = false;
+                            this.response = httpRequest.responseText;
+                        } else {
+                            this.active = false;
+                            this.response = httpRequest.status;
+                        }
+                    }
+                };
+                if (data !== 'undefined' && typeof data === 'string') {
+                    httpRequest.open('GET', url + '?' + data, true);
+                } else {
+                    httpRequest.open('GET', url, true);
+                }
+                httpRequest.send(null);
+            }
+            return this;
+        },
+        done: function (c) {
+            var check = setInterval(function () {
+                if (this.active !== true) {
+                    if (typeof c !== 'undefined') {
+                        clearInterval(check);
+                        return c(JSON.parse(this.response));
+                    } else {
+                        clearInterval(check);
+                        return JSON.parse(this.response);
+                    }
+                }
+            }, 500);
+        }
+    };
     $.fn = $.prototype = {
         about: {
             Library: "SelektorJS",
@@ -126,16 +194,30 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             }
         },
         html: function (replacement) {
-            for (var i = 0; i < this.length; i++) {
-                this[i].innerHTML = replacement;
+            if ( typeof replacement === 'undefined' ) {
+                for (var i = 0; i < this.length; i++) {
+                    return this[i].innerHTML;
+                }
+                return this;
+            } else {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].innerHTML = replacement;
+                }
+                return this;
             }
-            return this;
         },
         val: function (replacement) {
-            for (var i = 0; i < this.length; i++) {
-                this[i].value = replacement;
+            if ( typeof replacement === 'undefined' ) {
+                for (var i = 0; i < this.length; i++) {
+                    return this[i].value ;
+                }
+                return this;
+            } else {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].value = replacement;
+                }
+                return this;
             }
-            return this;
         },
         enable: function () {
             for (var i = 0; i < this.length; i++) {
@@ -255,6 +337,80 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                 }, speed/20);
             }
             return this;
+        },
+        remove: function () {
+            for (var i = 0; i < this.length; i++) {
+                (elem = this[i]).parentNode.removeChild(elem);
+            }
+            return this;
+        },
+        empty: function () {
+            for (var i = 0; i < this.length; i++) {
+                if (this[i].innerHTML)
+                this[i].innerHTML = "";
+                if (this[i].value)
+                this[i].value = "";
+            }
+            return this;
+        },
+        style: function (property, value) {
+            if (typeof property !== 'undefined' && value !== null) {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].style[property] = value;
+                }
+            }
+            return this;
+        },
+        attr: function (attribute, value) {
+            if (typeof attribute !== 'undefined' && typeof value !== 'undefined') {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].setAttribute(attribute, value);
+                }
+            }
+            return this;
+        },
+        append: function (elems) {
+            if (typeof elems !== 'undefined') {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].insertAdjacentHTML('beforeend', elems);
+                }
+            }
+            return this;
+        },
+        prepend: function (elems) {
+            if (typeof elems !== 'undefined') {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].insertAdjacentHTML('afterbegin', elems);
+                }
+            }
+            return this;
+        },
+        before: function (elems) {
+            if (typeof elems !== 'undefined') {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].insertAdjacentHTML('beforebegin', elems);
+                }
+            }
+            return this;
+        },
+        after: function (elems) {
+            if (typeof elems !== 'undefined') {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].insertAdjacentHTML('afterend', elems);
+                }
+            }
+            return this;
+        },
+        view: function () {
+            this[0].scrollIntoView(true);
+            return this;
+        },
+        center: function() {
+            for (var i = 0; i < this.length; i++) {
+                this[i].style.textAlign = 'center';
+                this[i].style.verticalAlign = 'middle';
+            }
+            return this;
         }
     };
     window.$ = $;
@@ -268,7 +424,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 //    return this;
 //}
 //addEvent
-//$('body').addEvent('mousemove',function(event){
+//$('body').on('mousemove',function(event){
 //  $('#x').html('x = ' + event.x);
 //  $('#y').html('y = ' + event.y);
 //});
