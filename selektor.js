@@ -26,7 +26,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     $.fn = $.prototype = {
         about: {
             Library: "SelektorJS",
-            Version: 0.4,
+            Version: 0.5,
             Author: "Christopher D. Langton",
             Website: "http:\/\/chrisdlangton.com",
             Created: "2013-03-19",
@@ -89,13 +89,23 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             }
         },
         on: function ( type, fn ) {
-            for (var i = 0; i < this.length; i++) {
-                if ( this[i].attachEvent ) {
-                    this[i]['e'+type+fn] = fn;
-                    this[i][type+fn] = function(){this[i]['e'+type+fn]( window.event );};
-                    this[i].attachEvent( 'on'+type, this[i][type+fn] );
-                } else {
-                    this[i].addEventListener( type, fn, false );
+            if (type === 'ready') {
+                handle = setInterval(function(){
+                    if ( document.readyState === "complete" ) {
+                        clearInterval(handle);
+                        fn();
+                    }
+                },10);
+                return this;
+            } else {
+                for (var i = 0; i < this.length; i++) {
+                    if ( this[i].attachEvent ) {
+                        this[i]['e'+type+fn] = fn;
+                        this[i][type+fn] = function(){this[i]['e'+type+fn]( window.event );};
+                        this[i].attachEvent( 'on'+type, this[i][type+fn] );
+                    } else {
+                        this[i].addEventListener( type, fn, false );
+                    }
                 }
             }
         },
@@ -108,6 +118,8 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                 for (var i = 0; i < this.length; i++) {
                     this[i].setAttribute(attribute, value);
                 }
+            } else if (typeof attribute !== 'undefined' && typeof value === 'undefined') {
+                return this[0].getAttribute(attribute);
             }
             return this;
         },
@@ -302,8 +314,9 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             if(typeof speed === 'undefined'){
                 speed = 1000;
             }
-            if(ele.style.display == 'none'){
+            if(ele.style.display === 'none'){
                 var current_opacity = 0.05;
+                ele.style.opacity = current_opacity;
                 ele.style.display = 'inherit';
                 handle = setInterval(function(){              
                     current_opacity += 0.05;
@@ -321,7 +334,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             if(typeof speed === 'undefined'){
                 speed = 1000;
             }
-            if(ele.style.display != 'none'){
+            if(ele.style.display !== 'none'){
                 var current_opacity = 1;
                 handle = setInterval(function(){
                     current_opacity -= 0.05;
