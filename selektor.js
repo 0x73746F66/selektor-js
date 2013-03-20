@@ -26,11 +26,11 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     $.fn = $.prototype = {
         about: {
             Library: "SelektorJS",
-            Version: 0.2,
+            Version: 0.3,
             Author: "Christopher D. Langton",
             Website: "http:\/\/chrisdlangton.com",
             Created: "2013-03-19",
-            Updated: "2013-03-19"
+            Updated: "2013-03-20"
         },
         addClass: function (c) {
             c = c.split(' ');
@@ -76,21 +76,29 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                     if ($(this[t]).hasClass(c[i])) {
                         $(this[t]).removeClass(c[i]);
                     } else {
-                        $(this[t]).addClass(c[i]);
+                        $(this[i]).addClass(c[i]);
                     }
                 }
             }
             return this;
         },
-        hide: function() {
+        hide: function(fade) {
             for (var i = 0; i < this.length; i++) {
-                this[i].style.display = 'none';
+                if (typeof fade === 'undefined') {
+                    this[i].style.display = 'none';
+                } else if (fade) {
+                    $(this[i]).fadeOut();
+                }
             }
             return this;
         },
-        show: function() {
+        show: function(fade) {
             for (var i = 0; i < this.length; i++) {
-                this[i].style.display = 'inherit';
+                if (typeof fade === 'undefined') {
+                    this[i].style.display = 'inherit';
+                } else if (fade) {
+                    $(this[i]).fadeIn();
+                }
             }
             return this;
         },
@@ -106,7 +114,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                 fn.call(scope, this[key], key, this);
             }
         },
-        addEvent: function ( type, fn ) {
+        on: function ( type, fn ) {
             for (var i = 0; i < this.length; i++) {
                 if ( this[i].attachEvent ) {
                     this[i]['e'+type+fn] = fn;
@@ -117,25 +125,141 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                 }
             }
         },
-        removeEvent: function ( type, fn ) {
-            for (var i = 0; i < this.length; i++) {
-                if ( this[i].detachEvent ) {
-                    this[i].detachEvent( 'on'+type, this[i][type+fn] );
-                    this[i][type+fn] = null;
-                } else {
-                    this[i].removeEventListener( type, fn, false );
-                }
-            }
-        },
         html: function (replacement) {
             for (var i = 0; i < this.length; i++) {
                 this[i].innerHTML = replacement;
+            }
+            return this;
+        },
+        val: function (replacement) {
+            for (var i = 0; i < this.length; i++) {
+                this[i].value = replacement;
+            }
+            return this;
+        },
+        enable: function () {
+            for (var i = 0; i < this.length; i++) {
+                if (this[i].tagName && (
+                    this[i].tagName.toLowerCase() === "button" || 
+                    this[i].tagName.toLowerCase() === "input" || 
+                    this[i].tagName.toLowerCase() === "optgroup" || 
+                    this[i].tagName.toLowerCase() === "option" || 
+                    this[i].tagName.toLowerCase() === "select" || 
+                    this[i].tagName.toLowerCase() === "textarea" 
+                    ) )
+                {
+                    this[i].disabled = false;
+                } else {
+                    var inputs = this[i].getElementsByTagName("input");
+                    for (var t = 0; t < inputs.length; t++) {
+                        inputs[t].disabled = false;
+                    }
+                    var selects = this[i].getElementsByTagName("select");
+                    for (var t = 0; t < selects.length; t++) {
+                        selects[t].disabled = false;
+                    }
+                    var textareas = this[i].getElementsByTagName("textarea");
+                    for (var t = 0; t < textareas.length; t++) {
+                        textareas[t].disabled = false;
+                    }
+                    var buttons = this[i].getElementsByTagName("button");
+                    for (var t = 0; t < buttons.length; t++) {
+                        buttons[t].disabled = false;
+                    }
+                    var options = this[i].getElementsByTagName("option");
+                    for (var t = 0; t < options.length; t++) {
+                        options[t].disabled = false;
+                    }
+                    var options = this[i].getElementsByTagName("optgroup");
+                    for (var t = 0; t < options.length; t++) {
+                        options[t].disabled = false;
+                    }
+                }
+            }
+            return this;
+        },
+        disable: function () {
+            for (var i = 0; i < this.length; i++) {
+                if (this[i].tagName && (
+                    this[i].tagName.toLowerCase() === "button" || 
+                    this[i].tagName.toLowerCase() === "input" || 
+                    this[i].tagName.toLowerCase() === "optgroup" || 
+                    this[i].tagName.toLowerCase() === "option" || 
+                    this[i].tagName.toLowerCase() === "select" || 
+                    this[i].tagName.toLowerCase() === "textarea" 
+                    ) )
+                {
+                    this[i].disabled = true;
+                } else {
+                    var inputs = this[i].getElementsByTagName("input");
+                    for (var t = 0; t < inputs.length; t++) {
+                        inputs[t].disabled = true;
+                    }
+                    var selects = this[i].getElementsByTagName("select");
+                    for (var t = 0; t < selects.length; t++) {
+                        selects[t].disabled = true;
+                    }
+                    var textareas = this[i].getElementsByTagName("textarea");
+                    for (var t = 0; t < textareas.length; t++) {
+                        textareas[t].disabled = true;
+                    }
+                    var buttons = this[i].getElementsByTagName("button");
+                    for (var t = 0; t < buttons.length; t++) {
+                        buttons[t].disabled = true;
+                    }
+                    var options = this[i].getElementsByTagName("option");
+                    for (var t = 0; t < options.length; t++) {
+                        options[t].disabled = true;
+                    }
+                    var options = this[i].getElementsByTagName("optgroup");
+                    for (var t = 0; t < options.length; t++) {
+                        options[t].disabled = true;
+                    }
+                }
+            }
+            return this;
+        },
+        fadeIn: function (speed) {            
+            var ele = this[0];
+            if(typeof speed === 'undefined'){
+                speed = 1000;
+            }
+            if(ele.style.display == 'none'){
+                var current_opacity = 0.05;
+                ele.style.display = 'inherit';
+                handle = setInterval(function(){              
+                    current_opacity += 0.05;
+                    ele.style.opacity = current_opacity;
+                    
+                    if(current_opacity >= 1){
+                        clearInterval(handle);
+                    }
+                }, speed/20);
+            }
+            return this;
+        },
+        fadeOut: function (speed) {
+            var ele = this[0];
+            if(typeof speed === 'undefined'){
+                speed = 1000;
+            }
+            if(ele.style.display != 'none'){
+                var current_opacity = 1;
+                handle = setInterval(function(){
+                    current_opacity -= 0.05;
+                    ele.style.opacity = current_opacity;
+                    if(current_opacity <= 0){
+                        clearInterval(handle);
+                        ele.style.display = 'none';
+                    }
+                }, speed/20);
             }
             return this;
         }
     };
     window.$ = $;
 })(window);
+
 // Add a plugin
 //$.fn.red = function() {
 //    for (var i = 0; i &lt; this.length; i++) {
