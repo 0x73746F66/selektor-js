@@ -358,7 +358,23 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 	  $('#x').html('x = ' + event.x);
 	  $('#y').html('y = ' + event.y);
 	}); */
-	$json = function (settings) {
+	var $jsonStart = function (fn) {
+        if ( window === this ) {
+            return new $jsonStart(fn);
+        }
+		window.jsonStart = fn;
+		return;
+	};
+	window.$jsonStart = $jsonStart;
+	var $jsonEnd = function (fn) {
+        if ( window === this ) {
+            return new $jsonEnd(fn);
+        }
+		window.jsonEnd = fn;
+		return;
+	};
+	window.$jsonEnd = $jsonEnd;
+	var $json = function (settings) {
 		if ( window === this ) {
 			return new $json(settings);
 		}
@@ -382,7 +398,10 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 			settings.data = this.serialiseObject(settings.data);
 		}
 		if (typeof settings.before === 'function') {
-			settings.before({url:settings.url,data:settings.data,method:settings.method});
+			typeof settings.data === 'undefined' ? settings.before({url:settings.url,method:settings.method}) : settings.before({url:settings.url,data:settings.data,method:settings.method}) ;
+		}
+		if (typeof jsonStart !== 'undefined' && typeof jsonStart === 'function') {
+			jsonStart();
 		}
 		var httpRequest;
 		if (window.XMLHttpRequest) { // Mozilla, Safari, ...
@@ -418,6 +437,9 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 				if (typeof settings.done !== 'undefined' && typeof settings.done === 'function') {
 					settings.done(httpRequest);
 				}						
+				if (typeof jsonEnd !== 'undefined' && typeof jsonEnd === 'function') {
+					jsonEnd();
+				}
 			}
 		};
 		if (typeof settings.data === 'string' && settings.method === 'GET') {
@@ -425,8 +447,9 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 		} else {
 			httpRequest.open(settings.method, settings.url, true);
 		}
-		httpRequest.send(settings.data);
+		typeof settings.data !== 'undefined' ? httpRequest.send(settings.data) : httpRequest.send(null) ;
 	};
+	window.$json = $json;
 	/* EXAMPLE USE
 	$json({
 		url:'/api/test/',
