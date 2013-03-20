@@ -26,7 +26,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     $.fn = $.prototype = {
         about: {
             Library: "SelektorJS",
-            Version: 0.3,
+            Version: 0.4,
             Author: "Christopher D. Langton",
             Website: "http:\/\/chrisdlangton.com",
             Created: "2013-03-19",
@@ -82,32 +82,6 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             }
             return this;
         },
-        hide: function(fade) {
-            for (var i = 0; i < this.length; i++) {
-                if (typeof fade === 'undefined') {
-                    this[i].style.display = 'none';
-                } else if (fade) {
-                    $(this[i]).fadeOut();
-                }
-            }
-            return this;
-        },
-        show: function(fade) {
-            for (var i = 0; i < this.length; i++) {
-                if (typeof fade === 'undefined') {
-                    this[i].style.display = 'inherit';
-                } else if (fade) {
-                    $(this[i]).fadeIn();
-                }
-            }
-            return this;
-        },
-        remove: function() {
-            for (var i = 0; i < this.length; i++) {
-                this[i].parentNode.removeChild(this[i]);
-            }
-            return this;
-        },
         forEach: function (fn, scope) {
             for (var key in this) {
                 if ( this.hasOwnProperty(key) )
@@ -124,6 +98,18 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                     this[i].addEventListener( type, fn, false );
                 }
             }
+        },
+        view: function () {
+            this[0].scrollIntoView(true);
+            return this;
+        },
+        attr: function (attribute, value) {
+            if (typeof attribute !== 'undefined' && typeof value !== 'undefined') {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].setAttribute(attribute, value);
+                }
+            }
+            return this;
         },
         html: function (replacement) {
             if ( typeof replacement === 'undefined' ) {
@@ -233,46 +219,17 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             }
             return this;
         },
-        fadeIn: function (speed) {            
-            var ele = this[0];
-            if(typeof speed === 'undefined'){
-                speed = 1000;
-            }
-            if(ele.style.display == 'none'){
-                var current_opacity = 0.05;
-                ele.style.display = 'inherit';
-                handle = setInterval(function(){              
-                    current_opacity += 0.05;
-                    ele.style.opacity = current_opacity;
-                    
-                    if(current_opacity >= 1){
-                        clearInterval(handle);
-                    }
-                }, speed/20);
-            }
-            return this;
-        },
-        fadeOut: function (speed) {
-            var ele = this[0];
-            if(typeof speed === 'undefined'){
-                speed = 1000;
-            }
-            if(ele.style.display != 'none'){
-                var current_opacity = 1;
-                handle = setInterval(function(){
-                    current_opacity -= 0.05;
-                    ele.style.opacity = current_opacity;
-                    if(current_opacity <= 0){
-                        clearInterval(handle);
-                        ele.style.display = 'none';
-                    }
-                }, speed/20);
-            }
-            return this;
-        },
-        remove: function () {
-            for (var i = 0; i < this.length; i++) {
-                (elem = this[i]).parentNode.removeChild(elem);
+        remove: function (preserveChildren) {
+			var elem;
+			if (typeof preserveChildren !== 'undefined' && preserveChildren === true) {
+				for (var i = 0; i < this.length; i++) {
+					this[i].insertAdjacentHTML( 'beforebegin', this[i].innerHTML );
+					(elem = this[i]).parentNode.removeChild(elem);
+				}
+			} else {
+				for (var i = 0; i < this.length; i++) {
+					( elem = this[i]).parentNode.removeChild(elem);
+				}
             }
             return this;
         },
@@ -282,22 +239,6 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                 this[i].innerHTML = "";
                 if (this[i].value)
                 this[i].value = "";
-            }
-            return this;
-        },
-        style: function (property, value) {
-            if (typeof property !== 'undefined' && value !== null) {
-                for (var i = 0; i < this.length; i++) {
-                    this[i].style[property] = value;
-                }
-            }
-            return this;
-        },
-        attr: function (attribute, value) {
-            if (typeof attribute !== 'undefined' && typeof value !== 'undefined') {
-                for (var i = 0; i < this.length; i++) {
-                    this[i].setAttribute(attribute, value);
-                }
             }
             return this;
         },
@@ -333,8 +274,106 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             }
             return this;
         },
-        view: function () {
-            this[0].scrollIntoView(true);
+        hide: function(fade) {
+            for (var i = 0; i < this.length; i++) {
+                if (typeof fade === 'undefined') {
+                    this[i].style.display = 'none';
+                } else if (fade) {
+                    $(this[i]).fadeOut();
+                }
+            }
+            return this;
+        },
+        show: function(fade) {
+            for (var i = 0; i < this.length; i++) {
+                if (typeof fade === 'undefined') {
+                    this[i].style.display = 'inherit';
+					if (this[i].style.opacity < 1 && this[i].style.opacity !== '') {
+						this[i].style.opacity = '';
+					}
+                } else if (fade) {
+                    $(this[i]).fadeIn();
+                }
+            }
+            return this;
+        },
+        fadeIn: function (speed) {            
+            var ele = this[0];
+            if(typeof speed === 'undefined'){
+                speed = 1000;
+            }
+            if(ele.style.display == 'none'){
+                var current_opacity = 0.05;
+                ele.style.display = 'inherit';
+                handle = setInterval(function(){              
+                    current_opacity += 0.05;
+                    ele.style.opacity = current_opacity;
+                    if(current_opacity >= 1){
+						ele.style.opacity = '';
+                        clearInterval(handle);
+                    }
+                }, speed/20);
+            }
+            return this;
+        },
+        fadeOut: function (speed) {
+            var ele = this[0];
+            if(typeof speed === 'undefined'){
+                speed = 1000;
+            }
+            if(ele.style.display != 'none'){
+                var current_opacity = 1;
+                handle = setInterval(function(){
+                    current_opacity -= 0.05;
+                    ele.style.opacity = current_opacity;
+                    if(current_opacity <= 0){
+                        clearInterval(handle);
+                        ele.style.display = 'none';
+                    }
+                }, speed/20);
+            }
+            return this;
+        },
+        fadeTo: function (fade,speed,step) {
+			var ele = this[0];
+			if (typeof fade === 'undefined') {
+				var fade = 0.5;
+			}
+			if (typeof speed === 'undefined') {
+				var speed = 1000;
+			}
+			if (typeof step === 'undefined') {
+				var step = 0.05;
+			}
+			if (ele.style.display !== 'none') {
+				var current_opacity = 1;
+				handle = setInterval(function(){
+					current_opacity -= step;
+					ele.style.opacity = current_opacity;
+					if(current_opacity < fade+0.02 && current_opacity > fade-0.02){
+						clearInterval(handle);
+					}
+				}, speed/20);
+			} else {
+				var current_opacity = step;
+                ele.style.opacity = current_opacity;
+				ele.style.display = 'inherit';
+                handle = setInterval(function() {
+                    current_opacity += step;
+                    ele.style.opacity = current_opacity;
+                    if(current_opacity < fade+0.02 && current_opacity > fade-0.02){
+						clearInterval(handle);
+					}
+                }, speed/20);
+			}
+            return this;
+        },
+        css: function (property, value) {
+            if (typeof property !== 'undefined' && value !== null) {
+                for (var i = 0; i < this.length; i++) {
+                    this[i].style[property] = value;
+                }
+            }
             return this;
         },
         center: function() {
@@ -459,7 +498,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 		data:'some=prop&more=props',
 		// or as json
 		data:'{"some":"prop","more":"props"}',
-		json:true,
+		json:true, //only use this if the data is JSON format
 		method:'GET',
 		before: function(opts){console.log(opts);},
 		success: function(json){console.log(json);},
