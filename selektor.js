@@ -82,8 +82,39 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             }
             return this;
         },
-        forEach: function (fn, scope) {
+        has: function (attr, value) {
+            if (typeof attr === 'undefined' || attr === 'class') { return {}; }
+            for (var i = 0; i < this.length; i++) {
+                if (this[i].hasAttribute(attr)) {
+                    if (typeof value !== 'undefined') {
+                        if (this[i].getAttribute(attr) !== value) {
+                            delete(this[i]);
+                        }
+                    }
+                } else {
+                    delete(this[i]);
+                }
+            }
+            return this;
+        },
+        not: function (attr, value) {
+            if (typeof attr === 'undefined' || attr === 'class') { return {}; }
+            for (var i = 0; i < this.length; i++) {
+                if (this[i].hasAttribute(attr)) {
+                    if (typeof value !== 'undefined') {
+                        if (this[i].getAttribute(attr) === value) {
+                            delete(this[i]);
+                        }
+                    } else {
+                        delete(this[i]);
+                    }
+                }
+            }
+            return this;
+        },
+        each: function (fn, scope) {
             for (var key in this) {
+                delete(this.length);
                 if ( this.hasOwnProperty(key) )
                 fn.call(scope, this[key], key, this);
             }
