@@ -26,11 +26,11 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     $.fn = $.prototype = {
         about: {
             Library: "SelektorJS",
-            Version: 0.5,
+            Version: 0.6,
             Author: "Christopher D. Langton",
             Website: "http:\/\/chrisdlangton.com",
             Created: "2013-03-19",
-            Updated: "2013-03-20"
+            Updated: "2013-03-21"
         },
         addClass: function (c) {
             c = c.split(' ');
@@ -95,10 +95,11 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                     delete(this[i]);
                 }
             }
+			delete(this.length);
             return this;
         },
         not: function (attr, value) {
-            if (typeof attr === 'undefined' || attr === 'class') { return {}; }
+            if (typeof attr === 'undefined') { return {}; }
             for (var i = 0; i < this.length; i++) {
                 if (this[i].hasAttribute(attr)) {
                     if (typeof value !== 'undefined') {
@@ -110,6 +111,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                     }
                 }
             }
+			delete(this.length);
             return this;
         },
         each: function (fn, scope) {
@@ -531,6 +533,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 			httpRequest.open(settings.method, settings.url, true);
 		}
 		typeof settings.data !== 'undefined' ? httpRequest.send(settings.data) : httpRequest.send(null) ;
+		return;
 	};
 	window.$json = $json;
 	/* EXAMPLE USE
@@ -553,4 +556,87 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 		error: function(resp){console.log(resp.status);},
 		done: function(resp){console.log(resp.responseText);}
 	}); */
+	var $bind = function (binder,data,replace) {
+		if (typeof binder !== 'string') { return ; }
+		if (typeof data === 'string') { data = JSON.parse(data); }
+		if (typeof data !== 'object') { return ; }
+        if ( window === this ) {
+            return new $bind(binder,data,replace);
+        }
+		if (typeof window.clone === 'undefined') {
+			clone = {}; clone[binder] = $('[each="'+binder+'"]').html();
+			$('[each="'+binder+'"]').empty();
+		} else if (typeof clone[binder] === 'undefined') {
+			clone[binder] = $('[each="'+binder+'"]').html();
+		}
+		if (typeof replace !== 'undefined' && replace === true) {
+			$('[each="'+binder+'"]').empty();
+		}
+		for (var j = 0; j < data.length; j++) {
+			$('[each="'+binder+'"]').append(clone[binder]);
+			var bind = {}, i = 0;
+			$('[binder="'+binder+'"] *').each(function(child){
+				if ($(child).attr('bind')) {
+					bind[i] = JSON.parse($(child).attr('bind'));
+					if(bind[i].text)
+					$(child).html(data[j][bind[i].text]);
+					if(bind[i].now){
+						var today = new Date();
+						var dd = today.getDate();
+						var mm = today.getMonth()+1;//January is 0!
+						var yyyy = today.getFullYear();
+						var hours = today.getHours();
+						var minutes = today.getMinutes();
+						var seconds = today.getSeconds();
+						if(dd < 10){dd='0'+dd;}
+						if(mm < 10){mm='0'+mm;}
+						if(bind[i].now === 'datetime'){
+							$(child).html(yyyy+'-'+mm+'-'+dd+' '+hours+':'+minutes+':'+seconds);
+						} else if(bind[i].now === 'short'){
+							$(child).html(yyyy+'-'+mm+'-'+dd+' '+hours+':'+minutes);
+						} else if(bind[i].now === 'date'){
+							$(child).html(yyyy+'-'+mm+'-'+dd);
+						} else if(bind[i].now === 'day'){
+							$(child).html(dd);
+						} else if(bind[i].now === 'month'){
+							$(child).html(mm);
+						} else if(bind[i].now === 'year'){
+							$(child).html(yyyy);
+						} else if(bind[i].now === 'time'){
+							$(child).html(hours+':'+minutes+':'+seconds);
+						} else if(bind[i].now === 'minutes'){
+							$(child).html(hours+':'+minutes);
+						}
+					}
+					i++;
+					child.removeAttribute('bind');
+				}
+			});
+		}
+		return ;
+	};
+	window.$bind = $bind;
+	/* EXAMPLE
+		<table binder="demo" cellspacing="1" cellpadding="2">
+	        <thead>
+		        <tr>
+			        <th class="sort" onClick="sort(this);return false;">Id</th>
+			        <th class="sort" onClick="sort(this);return false;">Name</th>
+			        <th class="sort" onClick="sort(this);return false;">Date</th>
+			        <th class="sort" onClick="sort(this);return false;">Info</th>
+		        </tr>
+	        </thead>
+
+	        <tbody each="demo" >        
+                <tr>
+                    <td bind='{"text":"id"}'></td>
+                    <td bind='{"text":"name"}'></td>
+                    <td bind='{"now":"datetime"}'></td>
+                    <td bind='{"text":"desc"}'></td>
+                </tr>
+	        </tbody>
+        </table>
+	var json = '[{"id":"52","name":"chrisdlangton","desc":"This is a demo for data binding in SelektorJS"},{"id":"56","name":"clangton","desc":"SelektorJS rocks!"},{"id":"80","name":"demo","desc":"This is a demo for SelektorJS"}]';
+	$bind('demo',json); */
+	
 })(window);
