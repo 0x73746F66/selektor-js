@@ -578,8 +578,30 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 			$('[binder="'+binder+'"] *').each(function(child){
 				if ($(child).attr('bind')) {
 					bind[i] = JSON.parse($(child).attr('bind'));
+					if(bind[i].img) {
+                        if (bind[i].imgClass) {
+                            $(child).append('<img class="' + bind[i].imgClass + '" src="' + data[j][bind[i].img] + '" />');
+                        } else {
+                            $(child).append('<img src="' + data[j][bind[i].img] + '" />');
+                        }
+                    }
+					if(bind[i].href) {
+                        if (bind[i].hrefClass) {
+                            if (bind[i].hrefText) {
+                                $(child).append('<a class="' + bind[i].hrefClass + '" href="' + data[j][bind[i].href] + '" target="_blank" >' + bind[i].hrefText + '</a>');
+                            } else {
+                                $(child).append('<a class="' + bind[i].hrefClass + '" href="' + data[j][bind[i].href] + '" target="_blank" >' + data[j][bind[i].href] + '</a>');
+                            }
+                        } else {
+                            if (bind[i].hrefText) {
+                                $(child).append('<a href="' + data[j][bind[i].href] + '" target="_blank" >' + bind[i].hrefText + '</a>');
+                            } else {
+                                $(child).append('<a href="' + data[j][bind[i].href] + '" target="_blank" >' + data[j][bind[i].href] + '</a>');
+                            }
+                        }
+                    }
 					if(bind[i].text)
-					$(child).html(data[j][bind[i].text]);
+					$(child).append(data[j][bind[i].text]);
 					if(bind[i].now){
 						var today = new Date();
 						var dd = today.getDate();
@@ -591,21 +613,21 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 						if(dd < 10){dd='0'+dd;}
 						if(mm < 10){mm='0'+mm;}
 						if(bind[i].now === 'datetime'){
-							$(child).html(yyyy+'-'+mm+'-'+dd+' '+hours+':'+minutes+':'+seconds);
+							$(child).append(yyyy+'-'+mm+'-'+dd+' '+hours+':'+minutes+':'+seconds);
 						} else if(bind[i].now === 'short'){
-							$(child).html(yyyy+'-'+mm+'-'+dd+' '+hours+':'+minutes);
+							$(child).append(yyyy+'-'+mm+'-'+dd+' '+hours+':'+minutes);
 						} else if(bind[i].now === 'date'){
-							$(child).html(yyyy+'-'+mm+'-'+dd);
+							$(child).append(yyyy+'-'+mm+'-'+dd);
 						} else if(bind[i].now === 'day'){
-							$(child).html(dd);
+							$(child).append(dd);
 						} else if(bind[i].now === 'month'){
-							$(child).html(mm);
+							$(child).append(mm);
 						} else if(bind[i].now === 'year'){
-							$(child).html(yyyy);
+							$(child).append(yyyy);
 						} else if(bind[i].now === 'time'){
-							$(child).html(hours+':'+minutes+':'+seconds);
+							$(child).append(hours+':'+minutes+':'+seconds);
 						} else if(bind[i].now === 'minutes'){
-							$(child).html(hours+':'+minutes);
+							$(child).append(hours+':'+minutes);
 						}
 					}
 					i++;
@@ -617,26 +639,36 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 	};
 	window.$bind = $bind;
 	/* EXAMPLE
-		<table binder="demo" cellspacing="1" cellpadding="2">
+		<table binder="feed" cellspacing="1" cellpadding="2">
 	        <thead>
 		        <tr>
-			        <th class="sort" onClick="sort(this);return false;">Id</th>
-			        <th class="sort" onClick="sort(this);return false;">Name</th>
-			        <th class="sort" onClick="sort(this);return false;">Date</th>
-			        <th class="sort" onClick="sort(this);return false;">Info</th>
+			        <th>id</th>
+			        <th>dtcreated</th>
+			        <th class="desc" onClick="sort(this);return false;">tw_created_at</th>
+			        <th>tw_id</th>
+			        <th>tw_text</th>
+			        <th>tw_screen_name</th>
+			        <th>tw_profile_pic</th>
+			        <th>tw_user_id</th>
+			        <th>tw_user_name</th>
 		        </tr>
 	        </thead>
 
-	        <tbody each="demo" >        
-                <tr>
-                    <td bind='{"text":"id"}'></td>
-                    <td bind='{"text":"name"}'></td>
-                    <td bind='{"now":"datetime"}'></td>
-                    <td bind='{"text":"desc"}'></td>
-                </tr>
+	        <tbody each="feed">
+	            <tr>
+	                <td bind='{"text":"id"}'></td>
+	                <td bind='{"text":"dtcreated"}'></td>
+	                <td bind='{"text":"tw_created_at"}'></td>
+	                <td bind='{"text":"tw_id"}'></td>
+	                <td bind='{"text":"tw_text"}'></td>
+	                <td bind='{"img":"tw_profile_pic","imgClass":"pip","text":"tw_screen_name"}'></td>
+	                <td bind='{"href":"tw_profile_pic","hrefText":"tw_profile_pic","hrefClass":"bold"}'></td>
+	                <td bind='{"text":"tw_user_id"}'></td>
+	                <td bind='{"text":"tw_user_name"}'></td>
+	            </tr>
 	        </tbody>
         </table>
-	var json = '[{"id":"52","name":"chrisdlangton","desc":"This is a demo for data binding in SelektorJS"},{"id":"56","name":"clangton","desc":"SelektorJS rocks!"},{"id":"80","name":"demo","desc":"This is a demo for SelektorJS"}]';
-	$bind('demo',json); */
+	var json = '[{"id":"1","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:34:39","tw_id":"313856011721142272","tw_text":"SEO - RSS Feed Ping to Search Engine\n<a target=\"_blank\" href=\"http:\/\/t.co\/U8xEga2NOP\">http:\/\/t.co\/U8xEga2NOP<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"2","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:34:13","tw_id":"313855904640557056","tw_text":"SEO - Sitemap Ping to Search Engines\n<a target=\"_blank\" href=\"http:\/\/t.co\/VnDbhWLhNf\">http:\/\/t.co\/VnDbhWLhNf<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"3","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:57","tw_id":"313855838559301632","tw_text":"Online Javascript Minification Tool\n<a target=\"_blank\" href=\"http:\/\/t.co\/S8mC9yQ3gL\">http:\/\/t.co\/S8mC9yQ3gL<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"4","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:28","tw_id":"313855715246735360","tw_text":"Social Markup JavaScript Library for Single-page Apps\n<a target=\"_blank\" href=\"https:\/\/t.co\/xwKmkmlFrW\">https:\/\/t.co\/xwKmkmlFrW<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"5","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:00","tw_id":"313855599093874688","tw_text":"PagesJS JavaScript Micro-Framework for SPAs\n<a target=\"_blank\" href=\"https:\/\/t.co\/54k5Ze2OkP\">https:\/\/t.co\/54k5Ze2OkP<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"6","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:32:30","tw_id":"313855472522383360","tw_text":"SelektorJS - JavaScript Selector and Prototype extender\n<a target=\"_blank\" href=\"https:\/\/t.co\/awnq0xk11j\">https:\/\/t.co\/awnq0xk11j<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"7","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-20 23:55:35","tw_id":"304378798412017664","tw_text":"What are Single-page Apps SPAs and how to choose a Framework: <a target=\"_blank\" href=\"http:\/\/t.co\/DDmV76qb4e\">http:\/\/t.co\/DDmV76qb4e<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"8","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-05 06:15:24","tw_id":"298676176057167872","tw_text":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a> - Page.js A small JavaScript Framework for single-page Apps: <a target=\"_blank\" href=\"http:\/\/t.co\/Z5HbIqHR\">http:\/\/t.co\/Z5HbIqHR<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"9","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-02 01:13:06","tw_id":"297512938359631872","tw_text":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/Codewiz_biz\" targe=\"_blank\">@Codewiz_biz<\/a> - CSS3 Rotate for IE, FF, Chrome, Safari, and Opera: <a target=\"_blank\" href=\"http:\/\/t.co\/YyzKc1ry\">http:\/\/t.co\/YyzKc1ry<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"10","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-01-22 23:24:03","tw_id":"293861615911194625","tw_text":"<a target=\"_blank\" href=\"http:\/\/t.co\/nWDiKrsk\">http:\/\/t.co\/nWDiKrsk<\/A> - Guide to building a REST API with PHP and Apache: <a target=\"_blank\" href=\"http:\/\/t.co\/PrMO0iPN\">http:\/\/t.co\/PrMO0iPN<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"}]';
+	$bind('feed',json); */
 	
 })(window);
