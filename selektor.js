@@ -557,12 +557,139 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 -		done: function(resp){console.log(resp.responseText);}
 -	}); */
 	var $bind = function (binder,data,replace) {
+        var dtf = function () {
+            var	t = /d{1,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|[LloSZ]|"[^"]*"|'[^']*'/g,
+                tz = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g,
+                tz2 = /[^-+\dA-Z]/g,
+                pad = function (val, len) {
+                    val = String(val);
+                    len = len || 2;
+                    while (val.length < len) val = "0" + val;
+                    return val;
+                };
+
+            // static closure
+            return function (date, mask) {
+                var utc;
+                var newObj = dtf;
+
+                if (arguments.length == 1 && Object.prototype.toString.call(date) == "[object String]" && !/\d/.test(date)) {
+                    mask = date;
+                    date = undefined;
+                }
+
+                date = date ? new Date(date) : new Date;
+                if (isNaN(date)) throw SyntaxError("invalid date");
+
+                mask = String(newObj.masks[mask] || mask || newObj.masks["default"]);
+
+                // UTC
+                if (mask.slice(0, 4) == "UTC:") {
+                    mask = mask.slice(4);
+                    utc = true;
+                }
+
+                var	_ = utc ? "getUTC" : "get",
+                    d = date[_ + "Date"](),
+                    D = date[_ + "Day"](),
+                    m = date[_ + "Month"](),
+                    y = date[_ + "FullYear"](),
+                    H = date[_ + "Hours"](),
+                    M = date[_ + "Minutes"](),
+                    s = date[_ + "Seconds"](),
+                    L = date[_ + "Milliseconds"](),
+                    o = utc ? 0 : date.getTimezoneOffset(),
+                    flags = {
+                        d:    d,
+                        dd:   pad(d),
+                        ddd:  newObj.i18n.days[D],
+                        dddd: newObj.i18n.days[D + 7],
+                        m:    m + 1,
+                        mm:   pad(m + 1),
+                        mmm:  newObj.i18n.months[m],
+                        mmmm: newObj.i18n.months[m + 12],
+                        yy:   String(y).slice(2),
+                        yyyy: y,
+                        h:    H % 12 || 12,
+                        hh:   pad(H % 12 || 12),
+                        H:    H,
+                        HH:   pad(H),
+                        M:    M,
+                        MM:   pad(M),
+                        s:    s,
+                        ss:   pad(s),
+                        l:    pad(L, 3),
+                        L:    pad(L > 99 ? Math.round(L / 10) : L),
+                        t:    H < 12 ? "a"  : "p",
+                        tt:   H < 12 ? "am" : "pm",
+                        T:    H < 12 ? "A"  : "P",
+                        TT:   H < 12 ? "AM" : "PM",
+                        Z:    utc ? "UTC" : (String(date).match(tz) || [""]).pop().replace(tz2, ""),
+                        o:    (o > 0 ? "-" : "+") + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4),
+                        S:    ["th", "st", "nd", "rd"][d % 10 > 3 ? 0 : (d % 100 - d % 10 != 10) * d % 10]
+                    };
+
+                return mask.replace(t, function ($0) {
+                    return $0 in flags ? flags[$0] : $0.slice(1, $0.length - 1);
+                });
+            };
+        }();
+        dtf.masks = {
+            "default":      "ddd mmm dd yyyy HH:MM:ss",
+            shortDate:      "m/d/yy",
+            mediumDate:     "mmm d, yyyy",
+            longDate:       "mmmm d, yyyy",
+            fullDate:       "dddd, mmmm d, yyyy",
+            shortTime:      "h:MM TT",
+            mediumTime:     "h:MM:ss TT",
+            longTime:       "h:MM:ss TT Z",
+            isoDate:        "yyyy-mm-dd",
+            isoTime:        "HH:MM:ss",
+            isoDateTime:    "yyyy-mm-dd'T'HH:MM:ss",
+            isoUtcDateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss'Z'"
+        };
+        dtf.i18n = {
+            days: [
+                "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
+                "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+            ],
+            months: [
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+                "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+            ]
+        };
+/*  EXAMPLES
+    this.dtf(date,"m/dd/yy");
+    // Returns, e.g., 6/09/07
+     
+    // Can also be used as a standalone function
+    this.dtf(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+    // Saturday, June 9th, 2007, 5:46:21 PM
+     
+    // You can use one of several named masks
+    this.dtf(date, "isoDateTime");
+    // 2007-06-09T17:46:21
+     
+    // When using the standalone this.dtf function,
+    // you can also provide the date as a string
+    this.dtf("Jun 9 2007", "fullDate");
+    // Saturday, June 9, 2007
+     
+    // Note that if you don't include the mask argument,
+    // this.dtf.masks.default is used
+    this.dtf(date);
+    // Sat Jun 09 2007 17:46:21
+     
+    // ...Or add the prefix "UTC:" to your mask.
+    this.dtf(date, "UTC:h:MM:ss TT Z");
+    10:46:21 PM UTC */
 		if (typeof binder !== 'string') { return ; }
 		if (typeof data === 'string') { data = JSON.parse(data); }
 		if (typeof data !== 'object') { return ; }
         if ( window === this ) {
             return new $bind(binder,data,replace);
         }
+        this.data = data;
 		if (typeof window.clone === 'undefined') {
 			clone = {}; clone[binder] = $('[each="'+binder+'"]').html();
 			$('[each="'+binder+'"]').empty();
@@ -607,6 +734,30 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                             $(child).append(data[j][bind[i].text]);
                         }
                     }
+					if(bind[i].datetime && bind[i].mask) {
+                        var newDatetime = new Date( data[j][bind[i].datetime] );
+                        var datetimeMasked = dtf( newDatetime , bind[i].mask );
+                        if (bind[i].datetimeClass) {
+                            $(child).append('<span class="' + bind[i].datetimeClass + '">' + datetimeMasked + '</span>');
+                        } else {
+                            $(child).append( datetimeMasked );
+                        }
+                    }
+					if(bind[i].formatNumber && !isNaN(data[j][bind[i].formatNumber])){
+                        var x = data[j][bind[i].formatNumber].split('.');
+                        var x1 = x[0];
+                        var x2 = x.length > 1 ? '.' + x[1] : '';
+                        var rgx = /(\d+)(\d{3})/;
+                        while (rgx.test(x1)) {
+                            x1 = x1.replace(rgx, '$1' + ',' + '$2');
+                        }
+                        var formatted = x1 + x2;
+                        if (bind[i].formatNumberClass) {
+                            $(child).append('<span class="' + bind[i].formatNumberClass + '">' + formatted + '</span>');
+                        } else {
+                            $(child).append(formatted);
+                        }
+                    }
 					if(bind[i].now){
 						var today = new Date();
 						var dd = today.getDate();
@@ -640,7 +791,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 				}
 			});
 		}
-		return ;
+		return this;
 	};
 	window.$bind = $bind;
 	/* EXAMPLE
@@ -661,15 +812,15 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 -
 -	        <tbody each="feed">
 -	            <tr>
--	                <td bind='{"text":"id"}'></td>
--	                <td bind='{"text":"dtcreated"}'></td>
+-	                <td bind='{"text":"id","textClass":"center"}'></td>
+-	                <td bind='{"datetime":"dtcreated","mask":"dddd, mmmm dS, yyyy, h:MM:ss TT","datetimeClass":"center"}'></td>
 -	                <td bind='{"text":"tw_created_at"}'></td>
--	                <td bind='{"text":"tw_id"}'></td>
+-	                <td bind='{"formatNumber":"tw_id","formatNumberClass":"center"}'></td>
 -	                <td bind='{"text":"tw_text"}'></td>
 -	                <td bind='{"img":"tw_profile_pic","imgClass":"pip","text":"tw_screen_name"}'></td>
--	                <td bind='{"href":"tw_profile_pic","hrefText":"tw_profile_pic","hrefClass":"bold"}'></td>
+-	                <td bind='{"href":"tw_profile_pic","hrefText":"Pic URL","hrefClass":"bold"}'></td>
 -	                <td bind='{"text":"tw_user_id"}'></td>
--	                <td bind='{"text":"tw_user_name"}'></td>
+-	                <td bind='{"text":"tw_user_name","textClass":"center"}'></td>
 -	            </tr>
 -	        </tbody>
 -        </table>
