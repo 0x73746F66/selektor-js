@@ -26,11 +26,11 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     $.fn = $.prototype = {
         about: {
             Library: "SelektorJS",
-            Version: 0.6,
+            Version: 0.7,
             Author: "Christopher D. Langton",
             Website: "http:\/\/chrisdlangton.com",
             Created: "2013-03-19",
-            Updated: "2013-03-21"
+            Updated: "2013-03-22"
         },
         addClass: function (c) {
             c = c.split(' ');
