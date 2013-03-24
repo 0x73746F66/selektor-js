@@ -26,11 +26,11 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     $.fn = $.prototype = {
         about: {
             Library: "SelektorJS",
-            Version: 0.7,
+            Version: 0.8,
             Author: "Christopher D. Langton",
             Website: "http:\/\/chrisdlangton.com",
             Created: "2013-03-19",
-            Updated: "2013-03-22"
+            Updated: "2013-03-24"
         },
         addClass: function (c) {
             c = c.split(' ');
@@ -556,7 +556,23 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 		error: function(resp){console.log(resp.status);},
 		done: function(resp){console.log(resp.responseText);}
 	}); */
-	var $bind = function (binder,data,replace) {
+	var $bind = function (opts) {
+        if ( window === this ) {
+            return new $bind(opts);
+        }
+		if (typeof opts === 'undefined') { return ; }
+		if (typeof opts.binder !== 'string') { return ; }
+        this.binder = opts.binder;
+		if (typeof opts.data === 'string') { opts.data = JSON.parse(data); }
+		if (typeof opts.data !== 'object') {
+            var temp = $('[binder="'+opts.binder+'"]').attr('json');
+            if (JSON.parse(temp)) {
+                return this;
+            } else {
+                return ;
+            }
+        }
+        $('[binder="'+opts.binder+'"]').attr('json',JSON.stringify(opts.data));
         var dtf = function () {
             var	t = /d{1,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|[LloSZ]|"[^"]*"|'[^']*'/g,
                 tz = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g,
@@ -683,59 +699,83 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     // ...Or add the prefix "UTC:" to your mask.
     this.dtf(date, "UTC:h:MM:ss TT Z");
     10:46:21 PM UTC */
-		if (typeof binder !== 'string') { return ; }
-		if (typeof data === 'string') { data = JSON.parse(data); }
-		if (typeof data !== 'object') { return ; }
-        if ( window === this ) {
-            return new $bind(binder,data,replace);
-        }
-        this.data = data;
 		if (typeof window.clone === 'undefined') {
-			clone = {}; clone[binder] = $('[each="'+binder+'"]').html();
-			$('[each="'+binder+'"]').empty();
-		} else if (typeof clone[binder] === 'undefined') {
-			clone[binder] = $('[each="'+binder+'"]').html();
+			clone = {}; clone[opts.binder] = $('[each="'+opts.binder+'"]').html();
+			$('[each="'+opts.binder+'"]').empty();
+		} else if (typeof clone[opts.binder] === 'undefined') {
+			clone[opts.binder] = $('[each="'+opts.binder+'"]').html();
 		}
-		if (typeof replace !== 'undefined' && replace === true) {
-			$('[each="'+binder+'"]').empty();
+		if (opts.replace === true) {
+			$('[each="'+opts.binder+'"]').empty();
 		}
-		for (var j = 0; j < data.length; j++) {
-			$('[each="'+binder+'"]').append(clone[binder]);
+		if ( opts.thead === true && ($('[binder="'+opts.binder+'"] > thead').length !== 1 && $('[binder="'+opts.binder+'"] > tbody').length === 1) ) {
+			var thead=document.createElement("thead");
+			var tr=document.createElement("tr");
+			var titles = [], t=0, th, title;
+			for ( var key in opts.data[0] ) {
+				if (opts.data[0].hasOwnProperty(key))
+				titles[t] = key; t++;
+			}
+			for (t=0;t<titles.length;t++) {
+				th=document.createElement("th");
+				th.className = 'sort';
+				title=document.createTextNode(titles[t]);
+				th.appendChild(title);
+				tr.appendChild(th);
+			}
+			thead.appendChild(tr);
+			document.querySelectorAll('[binder="'+opts.binder+'"]')[0].appendChild(thead);
+			if (opts.sortable === true) {
+				$('th.sort').on('click',function(event){
+					var binder = this.parentNode.parentNode.parentNode.getAttribute('binder');
+					var sort = this.className, parent=this.parentNode.getElementsByTagName('*');
+					for(var i=0;i<parent.length;i++){
+						parent[i].className = 'sort';
+					}
+					var by = this.innerHTML;
+					if (sort == "sort" || sort == "asc") { this.className = "desc"; } else {
+					if (sort == "desc") { this.className = "asc"; } }
+					$bind({binder:binder}).sort(by,this.className);
+				});
+			}
+		}
+		for (var j = 0; j < opts.data.length; j++) {
+			$('[each="'+opts.binder+'"]').append(clone[opts.binder]);
 			var bind = {}, i = 0;
-			$('[binder="'+binder+'"] *').each(function(child){
+			$('[binder="'+opts.binder+'"] *').each(function(child){
 				if ($(child).attr('bind')) {
 					bind[i] = JSON.parse($(child).attr('bind'));
 					if(bind[i].img) {
                         if (bind[i].imgClass) {
-                            $(child).append('<img class="' + bind[i].imgClass + '" src="' + data[j][bind[i].img] + '" />');
+                            $(child).append('<img class="' + bind[i].imgClass + '" src="' + opts.data[j][bind[i].img] + '" />');
                         } else {
-                            $(child).append('<img src="' + data[j][bind[i].img] + '" />');
+                            $(child).append('<img src="' + opts.data[j][bind[i].img] + '" />');
                         }
                     }
 					if(bind[i].href) {
                         if (bind[i].hrefClass) {
                             if (bind[i].hrefText) {
-                                $(child).append('<a class="' + bind[i].hrefClass + '" href="' + data[j][bind[i].href] + '" target="_blank" >' + bind[i].hrefText + '</a>');
+                                $(child).append('<a class="' + bind[i].hrefClass + '" href="' + opts.data[j][bind[i].href] + '" target="_blank" >' + bind[i].hrefText + '</a>');
                             } else {
-                                $(child).append('<a class="' + bind[i].hrefClass + '" href="' + data[j][bind[i].href] + '" target="_blank" >' + data[j][bind[i].href] + '</a>');
+                                $(child).append('<a class="' + bind[i].hrefClass + '" href="' + opts.data[j][bind[i].href] + '" target="_blank" >' + opts.data[j][bind[i].href] + '</a>');
                             }
                         } else {
                             if (bind[i].hrefText) {
-                                $(child).append('<a href="' + data[j][bind[i].href] + '" target="_blank" >' + bind[i].hrefText + '</a>');
+                                $(child).append('<a href="' + opts.data[j][bind[i].href] + '" target="_blank" >' + bind[i].hrefText + '</a>');
                             } else {
-                                $(child).append('<a href="' + data[j][bind[i].href] + '" target="_blank" >' + data[j][bind[i].href] + '</a>');
+                                $(child).append('<a href="' + opts.data[j][bind[i].href] + '" target="_blank" >' + opts.data[j][bind[i].href] + '</a>');
                             }
                         }
                     }
 					if(bind[i].text) {
                         if (bind[i].textClass) {
-                            $(child).append('<span class="' + bind[i].textClass + '">' + data[j][bind[i].text] + '</span>');
+                            $(child).append('<span class="' + bind[i].textClass + '">' + opts.data[j][bind[i].text] + '</span>');
                         } else {
-                            $(child).append(data[j][bind[i].text]);
+                            $(child).append(opts.data[j][bind[i].text]);
                         }
                     }
 					if(bind[i].datetime) {
-                        var newDatetime = new Date( data[j][bind[i].datetime] );
+                        var newDatetime = new Date( opts.data[j][bind[i].datetime] );
                         if(bind[i].mask) { 
                             var datetimeMasked = dtf( newDatetime , bind[i].mask );
                         } else {
@@ -747,8 +787,8 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                             $(child).append( datetimeMasked );
                         }
                     }
-					if(bind[i].formatNumber && !isNaN(data[j][bind[i].formatNumber])){
-                        var x = data[j][bind[i].formatNumber].split('.');
+					if(bind[i].formatNumber && !isNaN(opts.data[j][bind[i].formatNumber])){
+                        var x = opts.data[j][bind[i].formatNumber].split('.');
                         var x1 = x[0];
                         var x2 = x.length > 1 ? '.' + x[1] : '';
                         var rgx = /(\d+)(\d{3})/;
@@ -797,23 +837,45 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 		}
 		return this;
 	};
+    $bind.fn = $bind.prototype = {
+        sort: function(by,order) {
+            var json = $('[binder="'+this.binder+'"]').attr('json');
+            var obj = JSON.parse(json);
+			var sorted = obj.sort(function(a, b){
+				if (isNaN(by) && Date.parse(by)) { // is a date
+					var dateA=new Date(a[by]), dateB=new Date(b[by]);
+					if (order.toLowerCase() === 'desc') {
+						return dateB-dateA;
+					} else {
+						return dateA-dateB;
+					}
+				} else if (!isNaN(by)) { // is a number
+					if (order.toLowerCase() === 'desc') {
+						return parseInt(a[by]) > parseInt(b[by]);
+					} else {
+						return parseInt(b[by]) > parseInt(a[by]);
+					}
+				} else { // string
+					var byA=a[by].toLowerCase(), byB=b[by].toLowerCase();
+					if (order.toLowerCase() === 'desc') {
+						if (byB < byA)
+							return -1; 
+						if (byB > byA) return 1;
+					} else {
+						if (byA < byB)
+							return -1;
+						if (byA > byB) return 1;
+					}
+				}
+				return 0; //default return value (no sorting)
+			});
+			$bind({binder:this.binder,data:sorted,replace:true});
+			return this;
+        }
+    };
 	window.$bind = $bind;
-	/* EXAMPLE
+	/* EXAMPLE $bind
 		<table binder="feed" cellspacing="1" cellpadding="2">
-	        <thead>
-		        <tr>
-			        <th>id</th>
-			        <th>dtcreated</th>
-			        <th class="desc" onClick="sort(this);return false;">tw_created_at</th>
-			        <th>tw_id</th>
-			        <th>tw_text</th>
-			        <th>tw_screen_name</th>
-			        <th>tw_profile_pic</th>
-			        <th>tw_user_id</th>
-			        <th>tw_user_name</th>
-		        </tr>
-	        </thead>
-
 	        <tbody each="feed">
 	            <tr>
 	                <td bind='{"text":"id","textClass":"center"}'></td>
@@ -829,5 +891,5 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 	        </tbody>
         </table>
 	var json = '[{"id":"1","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:34:39","tw_id":"313856011721142272","tw_text":"SEO - RSS Feed Ping to Search Engine\n<a target=\"_blank\" href=\"http:\/\/t.co\/U8xEga2NOP\">http:\/\/t.co\/U8xEga2NOP<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"2","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:34:13","tw_id":"313855904640557056","tw_text":"SEO - Sitemap Ping to Search Engines\n<a target=\"_blank\" href=\"http:\/\/t.co\/VnDbhWLhNf\">http:\/\/t.co\/VnDbhWLhNf<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"3","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:57","tw_id":"313855838559301632","tw_text":"Online Javascript Minification Tool\n<a target=\"_blank\" href=\"http:\/\/t.co\/S8mC9yQ3gL\">http:\/\/t.co\/S8mC9yQ3gL<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"4","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:28","tw_id":"313855715246735360","tw_text":"Social Markup JavaScript Library for Single-page Apps\n<a target=\"_blank\" href=\"https:\/\/t.co\/xwKmkmlFrW\">https:\/\/t.co\/xwKmkmlFrW<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"5","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:00","tw_id":"313855599093874688","tw_text":"PagesJS JavaScript Micro-Framework for SPAs\n<a target=\"_blank\" href=\"https:\/\/t.co\/54k5Ze2OkP\">https:\/\/t.co\/54k5Ze2OkP<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"6","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:32:30","tw_id":"313855472522383360","tw_text":"SelektorJS - JavaScript Selector and Prototype extender\n<a target=\"_blank\" href=\"https:\/\/t.co\/awnq0xk11j\">https:\/\/t.co\/awnq0xk11j<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"7","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-20 23:55:35","tw_id":"304378798412017664","tw_text":"What are Single-page Apps SPAs and how to choose a Framework: <a target=\"_blank\" href=\"http:\/\/t.co\/DDmV76qb4e\">http:\/\/t.co\/DDmV76qb4e<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"8","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-05 06:15:24","tw_id":"298676176057167872","tw_text":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a> - Page.js A small JavaScript Framework for single-page Apps: <a target=\"_blank\" href=\"http:\/\/t.co\/Z5HbIqHR\">http:\/\/t.co\/Z5HbIqHR<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"9","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-02 01:13:06","tw_id":"297512938359631872","tw_text":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/Codewiz_biz\" targe=\"_blank\">@Codewiz_biz<\/a> - CSS3 Rotate for IE, FF, Chrome, Safari, and Opera: <a target=\"_blank\" href=\"http:\/\/t.co\/YyzKc1ry\">http:\/\/t.co\/YyzKc1ry<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"10","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-01-22 23:24:03","tw_id":"293861615911194625","tw_text":"<a target=\"_blank\" href=\"http:\/\/t.co\/nWDiKrsk\">http:\/\/t.co\/nWDiKrsk<\/A> - Guide to building a REST API with PHP and Apache: <a target=\"_blank\" href=\"http:\/\/t.co\/PrMO0iPN\">http:\/\/t.co\/PrMO0iPN<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"}]';
-	$bind('feed',json); */
+	$bind({binder:'feed',data:json,replace:true,thead:true,sortable:true}); */
 })(window);
