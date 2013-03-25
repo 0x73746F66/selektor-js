@@ -26,11 +26,11 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     $.fn = $.prototype = {
         about: {
             Library: "SelektorJS",
-            Version: 0.8,
+            Version: 0.9,
             Author: "Christopher D. Langton",
             Website: "http:\/\/chrisdlangton.com",
             Created: "2013-03-19",
-            Updated: "2013-03-24"
+            Updated: "2013-03-25"
         },
         addClass: function (c) {
             c = c.split(' ');
@@ -535,6 +535,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 		typeof settings.data !== 'undefined' ? httpRequest.send(settings.data) : httpRequest.send(null) ;
 		return;
 	};
+    $json.fn = $json.prototype = {};
 	window.$json = $json;
 	/* EXAMPLE USE
 	$json({
@@ -561,18 +562,20 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             return new $bind(opts);
         }
 		if (typeof opts === 'undefined') { return ; }
-		if (typeof opts.binder !== 'string') { return ; }
         this.binder = opts.binder;
-		if (typeof opts.data === 'string') { opts.data = JSON.parse(data); }
-		if (typeof opts.data !== 'object') {
-            var temp = $('[binder="'+opts.binder+'"]').attr('json');
-            if (JSON.parse(temp)) {
-                return this;
-            } else {
-                return ;
-            }
+		if (typeof opts.binder !== 'string') { return ; }
+        if (typeof window.appJSON === 'undefined') {
+            window.appJSON = {};
         }
-        $('[binder="'+opts.binder+'"]').attr('json',JSON.stringify(opts.data));
+		if (typeof opts.data === 'string') { opts.data = JSON.parse(opts.data); }
+		if (typeof opts.data !== 'object') {
+            return this;
+        } else if (typeof appJSON[opts.binder] === 'undefined') {
+            appJSON[opts.binder] = opts.data;
+        } else if (opts.replace !== true && typeof appJSON[opts.binder] !== 'undefined') {
+            appJSON[opts.binder] = appJSON[opts.binder].concat(opts.data);
+        }
+        // private functions
         var dtf = function () {
             var	t = /d{1,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|[LloSZ]|"[^"]*"|'[^']*'/g,
                 tz = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g,
@@ -699,16 +702,16 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     // ...Or add the prefix "UTC:" to your mask.
     this.dtf(date, "UTC:h:MM:ss TT Z");
     10:46:21 PM UTC */
-		if (typeof window.clone === 'undefined') {
-			clone = {}; clone[opts.binder] = $('[each="'+opts.binder+'"]').html();
-			$('[each="'+opts.binder+'"]').empty();
-		} else if (typeof clone[opts.binder] === 'undefined') {
-			clone[opts.binder] = $('[each="'+opts.binder+'"]').html();
+		if (typeof window.appClone === 'undefined') {
+			appClone = {}; appClone[opts.binder] = $('[forEach="'+opts.binder+'"]').html();
+			$('[forEach="'+opts.binder+'"]').empty();
+		} else if (typeof appClone[opts.binder] === 'undefined') {
+			appClone[opts.binder] = $('[forEach="'+opts.binder+'"]').html();
 		}
 		if (opts.replace === true) {
-			$('[each="'+opts.binder+'"]').empty();
+			$('[forEach="'+opts.binder+'"]').empty();
 		}
-		if ( opts.thead === true && ($('[binder="'+opts.binder+'"] > thead').length !== 1 && $('[binder="'+opts.binder+'"] > tbody').length === 1) ) {
+		if ( opts.thead === true && ($('[view="'+opts.binder+'"] > thead').length !== 1 && $('[view="'+opts.binder+'"] > tbody').length === 1) ) {
 			var thead=document.createElement("thead");
 			var tr=document.createElement("tr");
 			var titles = [], t=0, th, title;
@@ -718,16 +721,18 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 			}
 			for (t=0;t<titles.length;t++) {
 				th=document.createElement("th");
-				th.className = 'sort';
+                if (opts.sortable === true) {
+                    th.className = 'sort';
+                }
 				title=document.createTextNode(titles[t]);
 				th.appendChild(title);
 				tr.appendChild(th);
 			}
 			thead.appendChild(tr);
-			document.querySelectorAll('[binder="'+opts.binder+'"]')[0].appendChild(thead);
+			document.querySelectorAll('[view="'+opts.binder+'"]')[0].appendChild(thead);
 			if (opts.sortable === true) {
 				$('th.sort').on('click',function(event){
-					var binder = this.parentNode.parentNode.parentNode.getAttribute('binder');
+					var binder = this.parentNode.parentNode.parentNode.getAttribute('view');
 					var sort = this.className, parent=this.parentNode.getElementsByTagName('*');
 					for(var i=0;i<parent.length;i++){
 						parent[i].className = 'sort';
@@ -740,9 +745,9 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 			}
 		}
 		for (var j = 0; j < opts.data.length; j++) {
-			$('[each="'+opts.binder+'"]').append(clone[opts.binder]);
+			$('[forEach="'+opts.binder+'"]').append(appClone[opts.binder]);
 			var bind = {}, i = 0;
-			$('[binder="'+opts.binder+'"] *').each(function(child){
+			$('[view="'+opts.binder+'"] *').each(function(child){
 				if ($(child).attr('bind')) {
 					bind[i] = JSON.parse($(child).attr('bind'));
 					if(bind[i].img) {
@@ -839,8 +844,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 	};
     $bind.fn = $bind.prototype = {
         sort: function(by,order) {
-            var json = $('[binder="'+this.binder+'"]').attr('json');
-            var obj = JSON.parse(json);
+            var obj = appJSON[this.binder];
 			var sorted = obj.sort(function(a, b){
 				if (isNaN(by) && Date.parse(by)) { // is a date
 					var dateA=new Date(a[by]), dateB=new Date(b[by]);
@@ -875,8 +879,8 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     };
 	window.$bind = $bind;
 	/* EXAMPLE $bind
-		<table binder="feed" cellspacing="1" cellpadding="2">
-	        <tbody each="feed">
+		<table view="feed" cellspacing="1" cellpadding="2">
+	        <tbody forEach="feed">
 	            <tr>
 	                <td bind='{"text":"id","textClass":"center"}'></td>
 	                <td bind='{"datetime":"dtcreated","mask":"dddd, mmmm dS, yyyy, h:MM:ss TT","datetimeClass":"center"}'></td>
@@ -891,5 +895,112 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 	        </tbody>
         </table>
 	var json = '[{"id":"1","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:34:39","tw_id":"313856011721142272","tw_text":"SEO - RSS Feed Ping to Search Engine\n<a target=\"_blank\" href=\"http:\/\/t.co\/U8xEga2NOP\">http:\/\/t.co\/U8xEga2NOP<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"2","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:34:13","tw_id":"313855904640557056","tw_text":"SEO - Sitemap Ping to Search Engines\n<a target=\"_blank\" href=\"http:\/\/t.co\/VnDbhWLhNf\">http:\/\/t.co\/VnDbhWLhNf<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"3","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:57","tw_id":"313855838559301632","tw_text":"Online Javascript Minification Tool\n<a target=\"_blank\" href=\"http:\/\/t.co\/S8mC9yQ3gL\">http:\/\/t.co\/S8mC9yQ3gL<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"4","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:28","tw_id":"313855715246735360","tw_text":"Social Markup JavaScript Library for Single-page Apps\n<a target=\"_blank\" href=\"https:\/\/t.co\/xwKmkmlFrW\">https:\/\/t.co\/xwKmkmlFrW<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"5","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:33:00","tw_id":"313855599093874688","tw_text":"PagesJS JavaScript Micro-Framework for SPAs\n<a target=\"_blank\" href=\"https:\/\/t.co\/54k5Ze2OkP\">https:\/\/t.co\/54k5Ze2OkP<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"6","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-03-19 03:32:30","tw_id":"313855472522383360","tw_text":"SelektorJS - JavaScript Selector and Prototype extender\n<a target=\"_blank\" href=\"https:\/\/t.co\/awnq0xk11j\">https:\/\/t.co\/awnq0xk11j<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"7","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-20 23:55:35","tw_id":"304378798412017664","tw_text":"What are Single-page Apps SPAs and how to choose a Framework: <a target=\"_blank\" href=\"http:\/\/t.co\/DDmV76qb4e\">http:\/\/t.co\/DDmV76qb4e<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"8","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-05 06:15:24","tw_id":"298676176057167872","tw_text":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a> - Page.js A small JavaScript Framework for single-page Apps: <a target=\"_blank\" href=\"http:\/\/t.co\/Z5HbIqHR\">http:\/\/t.co\/Z5HbIqHR<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"9","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-02-02 01:13:06","tw_id":"297512938359631872","tw_text":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/Codewiz_biz\" targe=\"_blank\">@Codewiz_biz<\/a> - CSS3 Rotate for IE, FF, Chrome, Safari, and Opera: <a target=\"_blank\" href=\"http:\/\/t.co\/YyzKc1ry\">http:\/\/t.co\/YyzKc1ry<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"},{"id":"10","dtcreated":"2013-03-22 07:16:55","tw_created_at":"2013-01-22 23:24:03","tw_id":"293861615911194625","tw_text":"<a target=\"_blank\" href=\"http:\/\/t.co\/nWDiKrsk\">http:\/\/t.co\/nWDiKrsk<\/A> - Guide to building a REST API with PHP and Apache: <a target=\"_blank\" href=\"http:\/\/t.co\/PrMO0iPN\">http:\/\/t.co\/PrMO0iPN<\/A>","tw_screen_name":"<a class=\"tw_handle\" href=\"https:\/\/twitter.com\/codewiz_biz\" targe=\"_blank\">@codewiz_biz<\/a>","tw_profile_pic":"https:\/\/si0.twimg.com\/profile_images\/2933830717\/bcef4263a1d614e3a388fe4f3ee6cb69_normal.png","tw_user_id":"990106033","tw_user_name":"Codewiz.biz"}]';
-	$bind({binder:'feed',data:json,replace:true,thead:true,sortable:true}); */
+	$bind({binder:'feed',data:json,replace:true,thead:true,sortable:true});
+    */
+	var $CreateViewBindings = function (props) {
+        if ( window === this ) {
+            return new $CreateViewBindings(props);
+        }
+        if (typeof props === 'undefined') { return ; }
+        if (typeof props.view === 'undefined') { return ; }
+        if (typeof props.getJSON === 'undefined' && typeof props.json === 'undefined') { return ; }
+        if ( (typeof props.getJSON !== 'undefined' && typeof props.getJSON === 'object') && typeof props.json === 'undefined') {
+            if (typeof props.getJSON.url !== 'string') { return ; }
+            if (typeof props.getJSON.data === 'undefined') {
+                $json({
+                    url:props.getJSON.url,
+                    method:'GET',
+                    success: function(json){
+                        if (props.thead === true) {
+                            if (typeof props.sortable === 'undefined') { props.sortable = false; }
+                            $bind({binder:props.view,data:json,thead:true,sortable:props.sortable,replace:true});
+                        } else {
+                            $bind({binder:props.view,data:json,thead:false,sortable:false,replace:true});
+                        }
+                    },
+                    error: function(resp){console.log(resp.status);}
+                });
+            } else if (typeof props.getJSON.data === 'object') {
+                $json({
+                    url:props.getJSON.url,
+                    data:props.getJSON.data,
+                    method:'GET',
+                    success: function(json){
+                        if (props.thead === true) {
+                            if (typeof props.sortable === 'undefined') { props.sortable = false; }
+                            $bind({
+                                binder:props.view,
+                                data:json,
+                                thead:true,
+                                sortable:props.sortable,
+                                replace:true
+                            });
+                        } else {
+                            $bind({
+                                binder:props.view,
+                                data:json,
+                                thead:false,
+                                sortable:false,
+                                replace:true
+                            });
+                        }
+                    },
+                    error: function(resp){console.log(resp.status);}
+                });
+            }
+        } else if ( typeof props.json !== 'undefined' && typeof props.json === 'string') {
+            if (props.thead === true) {
+                if (typeof props.sortable === 'undefined') { props.sortable = false; }
+                $bind({
+                    binder:props.view,
+                    data:props.json,
+                    thead:true,
+                    sortable:props.sortable,
+                    replace:true
+                });
+            } else {
+                $bind({
+                    binder:props.view,
+                    data:props.json,
+                    thead:false,
+                    sortable:false,
+                    replace:true
+                });
+            }
+        }
+        if (typeof props.callback === 'function') {
+            if (typeof props.json === 'undefined') {
+            return props.callback({
+                            view:props.view
+                        });
+            } else {
+            return props.callback({
+                            view:props.view,
+                            json:props.json
+                        });
+            }
+        } else {
+            return this;
+        }
+	};
+	window.$CreateViewBindings = $CreateViewBindings;
+    /* EXAMPLE
+    $('document').on('ready',function(event){
+        // define a sortable table view
+        var MyView = {
+            view: 'feed', // matching view attribute in the DOM
+            getJSON: { // remote JSON data source
+                url:'/api/tweets/',
+                data:{ foo:'some request data', bar:'other request data' } // properties for the query string
+            },
+            json: '[{"default":"json","data":"source"}]', // use this if your default JSON data is not remote
+            thead: true, // dynamically create table headings from JSON key values?
+            sortable:true, // if headings were generated, do we make the table sortable?
+            callback: function(props){ 
+                // do stuff after view is generated.
+            }
+        };
+        $CreateViewBindings(MyView);
+    });
+    */
 })(window);
