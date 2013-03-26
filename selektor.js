@@ -319,32 +319,34 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
             }
             return this;
         },
-        hide: function(fade) {
+        hide: function(fadespeed,fn) {
             for (var i = 0; i < this.length; i++) {
-                if (typeof fade === 'undefined') {
+                if (typeof fadespeed === 'undefined') {
                     this[i].style.display = 'none';
-                } else if (fade) {
-                    $(this[i]).fadeOut();
+                    if (typeof fn !== 'undefined') { fn(this); }
+                } else {
+                    $(this[i]).fadeOut(fadespeed,fn);
                 }
             }
             return this;
         },
-        show: function(fade) {
+        show: function(fadespeed,fn) {
             for (var i = 0; i < this.length; i++) {
-                if (typeof fade === 'undefined') {
+                if (typeof fadespeed === 'undefined') {
                     this[i].style.display = 'inherit';
 					if (this[i].style.opacity < 1 && this[i].style.opacity !== '') {
 						this[i].style.opacity = '';
+                        if (typeof fn !== 'undefined') { fn(this); }
 					}
-                } else if (fade) {
-                    $(this[i]).fadeIn();
+                } else {
+                    $(this[i]).fadeIn(fadespeed,fn);
                 }
             }
             return this;
         },
-        fadeIn: function (speed) {            
+        fadeIn: function (speed,fn) {            
             var ele = this[0];
-            if(typeof speed === 'undefined'){
+            if(typeof speed === 'undefined' || speed === null || speed === true){
                 speed = 1000;
             }
             if(ele.style.display === 'none'){
@@ -357,14 +359,15 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                     if(current_opacity >= 1){
 						ele.style.opacity = '';
                         clearInterval(handle);
+                        if (typeof fn !== 'undefined') { fn(this); }
                     }
                 }, speed/20);
             }
             return this;
         },
-        fadeOut: function (speed) {
+        fadeOut: function (speed,fn) {
             var ele = this[0];
-            if(typeof speed === 'undefined'){
+            if(typeof speed === 'undefined' || speed === null || speed === true){
                 speed = 1000;
             }
             if(ele.style.display !== 'none'){
@@ -375,12 +378,13 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                     if(current_opacity <= 0){
                         clearInterval(handle);
                         ele.style.display = 'none';
+                        if (typeof fn !== 'undefined') { fn(this); }
                     }
                 }, speed/20);
             }
             return this;
         },
-        fadeTo: function (fade,speed,step) {
+        fadeTo: function (fade,speed,step,fn) {
 			var ele = this[0];
 			if (typeof fade === 'undefined') {
 				var fade = 0.5;
@@ -398,6 +402,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
 					ele.style.opacity = current_opacity;
 					if(current_opacity < fade+0.02 && current_opacity > fade-0.02){
 						clearInterval(handle);
+                        if (typeof fn !== 'undefined') { fn(this); }
 					}
 				}, speed/20);
 			} else {
@@ -409,6 +414,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                     ele.style.opacity = current_opacity;
                     if(current_opacity < fade+0.02 && current_opacity > fade-0.02){
 						clearInterval(handle);
+                        if (typeof fn !== 'undefined') { fn(this); }
 					}
                 }, speed/20);
 			}
@@ -1016,10 +1022,41 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
         }
         if (typeof props.onChange === 'function') {
             $('[values="'+props.view+'"]').on('change',function(event){
-                var ele = this;
-                props.onChange(ele,event);
+                props.onChange(this,event);
             });
         }
+        
+        
+        var bind = {}, i = 0;
+        $('[view="'+props.view+'"] *').each(function(child){
+            if ($(child).attr('bind')) {
+                bind[i] = JSON.parse($(child).attr('bind'));
+                if(bind[i].click) {
+                    var fn = bind[i].click;
+                    $(child).on('click',function(event){
+                        var input = {};
+                        $('[view="'+props.view+'"] *').each(function(formChild){
+                            if (formChild.nodeName.toLowerCase() === 'select') {
+                                input[formChild.name || i] = formChild.options[formChild.selectedIndex].text;
+                            } else if (formChild.nodeName.toLowerCase() === 'input') {
+                                input[formChild.name || i] = formChild.value ;
+                            } else if (formChild.nodeName.toLowerCase() === 'textarea') {
+                                input[formChild.name || i] = formChild.value ;
+                            }
+                        });
+                        props[fn](
+                            input,
+                            $('[view="'+props.view+'"]'),
+                            {json:props.json,view:props.view},
+                            child,
+                            event
+                        );
+                    });
+                }
+            }
+            i++;
+        });
+
         if (typeof props.callback === 'function') {
             if (typeof props.json === 'undefined') {
             return props.callback({
@@ -1057,19 +1094,150 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
     });
     
     
-      EXAMPLE select option values
-      
-    var OptionView = {
-        view: 'testing',
+      EXAMPLE select option values, on submit form.
+        <div view="form" class="hide">
+            <input type="text" name="phrase" value="" placeholder="username" required />
+            <input type="password" name="optional" value="" placeholder="password" />
+            <select name="fruit" values="form">
+                <option bind='{"value":"ordered"}'></option>
+            </select>
+            <textarea name="freetext" value="" placeholder="tell me more" ></textarea>
+            <button bind='{"click":"choseFruit"}' >Submit</button>
+        </div>
+        <p>Selected Value: <span id="testing"></span></p>
+    var FormView = {
+        view: 'form',
         json: '["Pear","Apple","Orange","Grape"]',
         callback:function(props){
-            $('[view="testing"]').show();
+            $('[view="form"]').show();
         },
         onChange:function(ele,event){
             $('#testing').html(ele.options[ele.selectedIndex].text);
+        },
+        choseFruit:function(input,ele,data,btn,event){
+            console.log(input);
+            console.log(ele);
+            console.log(data);
+            console.log(btn);
+            console.log(event);
         }
     };
-    $CreateViewBindings(OptionView);
+    $CreateViewBindings(FormView);
     
+    */
+	$.fn.msg = function (props) {
+        if (typeof props.onAccept === 'undefined') { return ; }
+        if (typeof props.text === 'undefined') { return ; }
+        var ele = this[0];
+        $('body').css('height','100%');
+        if (typeof props.className === 'string') {
+            var overlay = document.createElement('div');
+                overlay.id = 'overlay';
+                overlay.style.display = 'none';
+                overlay.style.position = 'absolute';
+                overlay.style.left = '0px';
+                overlay.style.top = '0px';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.zIndex = '1000';
+                overlay.style.textAlign = 'center';
+                overlay.className = props.className;
+            var div = document.createElement('div');
+            var text = document.createTextNode(props.text);
+                div.appendChild(text);
+            var ok = document.createElement('button');
+                ok.id = 'btnOk';
+            if (typeof props.btnOkText === 'string') {
+                var okText = document.createTextNode(props.btnOkText);
+            } else {
+                var okText = document.createTextNode('Ok');
+            }
+                ok.appendChild(okText);
+                div.appendChild(ok);
+            var cancel = document.createElement('button');
+                cancel.id = 'btnCancel';
+            if (typeof props.btnCancelText === 'string') {
+                var cancelText = document.createTextNode(props.btnCancelText);
+            } else {
+                var cancelText = document.createTextNode('Cancel');
+            }
+                cancel.appendChild(cancelText);
+                div.appendChild(cancel);
+                overlay.appendChild(div);
+                ele.appendChild(overlay);
+        } else {
+            var overlay = document.createElement('div');
+                overlay.id = 'overlay';
+                overlay.style.display = 'none';
+                overlay.style.position = 'absolute';
+                overlay.style.left = '0px';
+                overlay.style.top = '0px';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.zIndex = '1000';
+                overlay.style.textAlign = 'center';
+            var div = document.createElement('div');
+                div.style.width = '475px';
+                div.style.minHeight = '65px';
+                div.style.margin = '100px auto';
+                div.style.backgroundColor = '#FFF';
+                div.style.border = '1px solid #000';
+                div.style.padding = '15px';
+                div.style.textAlign = 'center';
+            var text = document.createTextNode(props.text);
+                div.appendChild(text);
+            var ok = document.createElement('button');
+                ok.id = 'btnOk';
+                ok.style.position = 'relative';
+                ok.style.right = '30em';
+                ok.style.minWidth = '85px';
+                ok.style.padding = '20px';
+                ok.style.float = 'right';
+            var okText = document.createTextNode('Ok');
+                ok.appendChild(okText);
+                div.appendChild(ok);
+            var cancel = document.createElement('button');
+                cancel.id = 'btnCancel';
+                cancel.style.position = 'relative';
+                cancel.style.left = '30em';
+                cancel.style.minWidth = '70px';
+                cancel.style.padding = '20px';
+                cancel.style.float = 'left';
+            var cancelText = document.createTextNode('Cancel');
+                cancel.appendChild(cancelText);
+                div.appendChild(cancel);
+                overlay.appendChild(div);
+                ele.appendChild(overlay);
+        }
+        $('#overlay').view().fadeTo(1,200);
+        $('#btnOk').on('click',function(event){
+            $('#overlay').fadeOut(true,function(){
+                $('#overlay').remove();
+            });
+            return props.onAccept(ele,this,event);
+        });
+        $('#btnCancel').on('click',function(event){
+            $('#overlay').fadeOut(true,function(){
+                $('#overlay').remove();
+            });
+            if (typeof props.onCancel !== 'undefined') {
+                return props.onCancel(ele,this,event);
+            }
+        });
+        return this ;
+	};
+/* EXAMPLE
+    $('#main').msg({
+            text:'this is a text message confirm dialog box - do you want to continue?', //the question
+            onAccept: function(ele,btn,event){          // what happenes when user clicks Ok
+                    console.log('you confirmed!');
+                },
+            className: 'confirm-msgbox',                          // class of the most parent element, style child classes using css selectors from parent
+            onCancel: function(ele,btn,event){          // what happenes when user clicks Ok
+                    console.log('you cancelled!');
+                },
+            btnCancelText: 'Stop',                      // choose a button name if you set a class for the parent
+            btnOkText: 'Continue'                       // choose a button name if you set a class for the parent
+        });
     */
 })(window);
