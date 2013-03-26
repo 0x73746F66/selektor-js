@@ -76,7 +76,7 @@ $('div#main').hasClass('custom-bg') // returns bool if the div with id main has 
 $('[page="home"] *').addClass('highlight') //adds class highlight to matching elements and all thier child elements within by the custom attribute page with attribute value home.
 $('[page="home"] *').removeClass('highlight') //removes class highlight leaving other classes in tact from matching elements and all thier child elements within by the custom attribute page with attribute value home.
 $('body').toggleClass('margins') //toggles the class margins on and off the entire body
-$('input:checked'').val() //gets all checked input values
+$('input:checked').val() //gets all checked input values
 $('input[name="password"]').val('password') //sets all input with name password a value of password.
 $('div#main').html('<h1>Heading</h1>') //replaces html in the div with id main
 $('div#main').html() //returns HTML from the div with id main
