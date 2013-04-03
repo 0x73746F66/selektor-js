@@ -872,7 +872,7 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                                 bind[i] = JSON.parse($(child).attr('data-bind'));
                                 if(bind[i].value) {
                                     $(child).append(opts.data[key][j]);
-                                    if (bind[i].value === true) {
+                                    if (bind[i].value === true || bind[i].value === 'key') {
                                         $(child).val(opts.data[key][j]);
                                     } else if (bind[i].value === "ordered") {
                                         $(child).val(j);
@@ -1016,8 +1016,8 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
         $('[view="'+props.view+'"] *').each(function(child){
             if ($(child).attr('data-bind')) {
                 bind[i] = JSON.parse($(child).attr('data-bind'));
-                if(bind[i].click) {
-                    var fn = bind[i].click;
+                if(bind[i].submit) {
+                    var fn = bind[i].submit;
                     $(child).on('click',function(event){
                         var input = {};
                         $('[view="'+props.view+'"] *').each(function(formChild){
@@ -1038,10 +1038,21 @@ if(!document.querySelector){var chunker=/((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[
                         );
                     });
                 }
+                if(bind[i].click) {
+                    var fn = bind[i].click;
+                    $(child).on('click',function(event){
+                        var input = {};
+                        input[child.name] = child.value ;
+                        props[fn](
+                            input,
+                            child,
+                            event
+                        );
+                    });
+                }
             }
             i++;
         });
-
         if (typeof props.callback === 'function') {
             if (typeof props.json === 'undefined') {
             return props.callback({
