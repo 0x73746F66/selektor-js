@@ -4,7 +4,7 @@
 SelektorJS
 ==========
 
-JavaScript Framework.
+DOM and MVVM JavaScript Framework.
 
 [![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=chrisdlangton&url=https://github.com/chrisdlangton/SelektorJS&title=SelektorJS&language=&tags=github&category=software)
 
@@ -13,7 +13,7 @@ JavaScript Framework.
 
 # What is SelektorJS
 
-SelektorJS is a JavaScript Framework offering CSS style Selector, DOM event management, and binding template systems.
+SelektorJS is a JavaScript Framework offering CSS style Selector, DOM event management, and MVVM data binding with observables and template systems.
 Its origins are from the development of a web-based mobile HTML5 game I (Chris Langton the Author) am developing.
 
 ## Installation:
@@ -23,7 +23,7 @@ Download the latest SelektorJS or SelektorJS.min.js file from this repository or
 Include the script in your html body after all the content (at the bottom of the body element) like so;
 
 ```html
-<script src="javascripts/Pages.js/SelektorJS.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="javascripts/SelektorJS.min.js" type="text/javascript" charset="utf-8"></script>
 ```
 
 Start writing great content!
@@ -100,7 +100,7 @@ SelektorJS has a simple event handler for attaching a function to an element tha
 ```javascript
 $('body').on('mousemove',function(event){
     $('#x').html('x = ' + event.x);
-	  $('#y').html('y = ' + event.y);
+	$('#y').html('y = ' + event.y);
 });
 ```
 As the mouse moves its x & y location is displayed.
@@ -130,12 +130,12 @@ As the selectors return nodes in an array, you must iterate over them applying w
 ```javascript
 $.fn.green = function() {
   	for (var i = 0; i &lt; this.length; i++) {
-			this[i].style.color = 'green';
-		}
-		return this;
+		this[i].style.color = 'green';
+	}
+	return this;
 };
 ```
-This example will apply the CSS style property of color a value of green. 
+This example will apply the CSS style property of color a value of green. There is no limit as to what you can add to SelektorJS!
 
 ### More methods to be documented;
 
@@ -149,45 +149,49 @@ This example will apply the CSS style property of color a value of green.
 * $CreateViewBindings
 
 ```javascript
+//setup always before and after functions for JSON AJAX
+$json({
+	Start: function(){
+        $('#nonce').show();
+    },
+    End: function(){
+        $('#nonce').hide();
+    }
+});
+//make a JSON AJAX call
 $json({
   	url:'/api/test/',
-		// data as an object to be serialised;
-		data:{some:'prop',more:'props'},
-		// or as a serialised string
-		data:'some=prop&more=props',
-		// or as json
-		data:'{"some":"prop","more":"props"}',
-		json:true, //only use this if the data is JSON format
-		method:'GET',
-		before: function(opts){console.log(opts);},
-		success: function(json){console.log(json);},
-		status: {
-			404:function(resp){console.log(resp);},
-			500:function(resp){console.log(resp);}
-			},
-		error: function(resp){console.log(resp.status);},
-		done: function(resp){console.log(resp.responseText);}
-	});
-    $jsonStart(function(){
-        $('#ajaxload').show();
-    });
-    $jsonEnd(function(){
-        $('#ajaxload').hide();
-    });
+	// data as an object to be serialised;
+	data:{some:'prop',more:'props'},
+	// or as a serialised string
+	data:'some=prop&more=props',
+	// or as json
+	data:'{"some":"prop","more":"props"}',
+	json:true, //only use this if the data is JSON format
+	method:'GET',
+	before: function(opts){console.log(opts);},
+	success: function(json){console.log(json);},
+	status: {
+		404:function(resp){console.log(resp);},
+		500:function(resp){console.log(resp);}
+		},
+	error: function(resp){console.log(resp.status);},
+	done: function(resp){console.log(resp.responseText);}
+});
 ```
 ```html
 <table view="feed" cellspacing="1" cellpadding="2">
   <tbody forEach="feed">
       <tr>
-          <td bind='{"text":"id","textClass":"center"}'></td>
-          <td bind='{"datetime":"dtcreated","mask":"dddd, mmmm dS, yyyy, h:MM:ss TT","datetimeClass":"center"}'></td>
-          <td bind='{"text":"tw_created_at"}'></td>
-          <td bind='{"formatNumber":"tw_id","formatNumberClass":"center"}'></td>
-          <td bind='{"text":"tw_text"}'></td>
-          <td bind='{"img":"tw_profile_pic","imgClass":"pip","text":"tw_screen_name"}'></td>
-          <td bind='{"href":"tw_profile_pic","hrefText":"Pic URL","hrefClass":"bold"}'></td>
-          <td bind='{"text":"tw_user_id"}'></td>
-          <td bind='{"text":"tw_user_name","textClass":"center"}'></td>
+          <td data-bind='{"text":"id","textClass":"center"}'></td>
+          <td data-bind='{"datetime":"dtcreated","mask":"dddd, mmmm dS, yyyy, h:MM:ss TT","datetimeClass":"center"}'></td>
+          <td data-bind='{"text":"tw_created_at"}'></td>
+          <td data-bind='{"formatNumber":"tw_id","formatNumberClass":"center"}'></td>
+          <td data-bind='{"text":"tw_text"}'></td>
+          <td data-bind='{"img":"tw_profile_pic","imgClass":"pip","text":"tw_screen_name"}'></td>
+          <td data-bind='{"href":"tw_profile_pic","hrefText":"Pic URL","hrefClass":"bold"}'></td>
+          <td data-bind='{"text":"tw_user_id"}'></td>
+          <td data-bind='{"text":"tw_user_name","textClass":"center"}'></td>
       </tr>
   </tbody>
 </table>
@@ -195,7 +199,7 @@ $json({
 ```javascript
 var json = 'some json data';
 $bind({
-  binder:'feed',
+  view:'feed',
   data:json,
   replace:true,
   thead:true,
@@ -203,9 +207,9 @@ $bind({
 });
 ```
 ```html
-<div view="form" class="hide">
-    <select name="fruit" values="form">
-        <option bind='{"value":"ordered"}'></option>
+<div view="form">
+    <select name="fruit">
+        <option data-bind='{"value":"ordered"}'></option>
     </select>
 </div>
 ```
@@ -218,9 +222,8 @@ $bind({
 });
 ```
 ```javascript
-$('document').on('ready',function(event){
-        // define a sortable table view
-var MyView = {
+// define a sortable table view model
+var TwitterFeedViewModel = {
     view: 'feed', // matching view attribute in the DOM
     getJSON: { // remote JSON data source
         url:'/api/tweets/',
@@ -228,42 +231,47 @@ var MyView = {
     },
     json: '[{"default":"json","data":"source"}]', // use this if your default JSON data is not remote
     thead: true, // dynamically create table headings from JSON key values?
-    sortable:true, // if headings were generated, do we make the table sortable?
+    sortable: true, // if headings were generated, do we make the table sortable?
     callback: function(props){ 
         // do stuff after view is generated.
+        console.log('View model loaded successfully');
     }
 };
-$CreateViewBindings(MyView);
+$CreateViewBindings(TwitterFeedViewModel);
 ```
 
 ```html
-<div view="form" class="hide">
-    <input type="text" name="phrase" value="" placeholder="username" required />
-    <input type="password" name="optional" value="" placeholder="password" />
-    <select name="fruit" values="form">
-        <option bind='{"value":"ordered"}'></option>
+<div view="form">
+    <input type="text" name="username" value="" placeholder="username" required />
+    <input type="password" name="password" value="" placeholder="password" />
+    <select name="websites">
+        <option data-bind='{"value":"ordered"}'></option>
     </select>
     <textarea name="freetext" value="" placeholder="tell me more" ></textarea>
-    <button bind='{"click":"choseFruit"}' >Submit</button>
+    <button data-bind='{"click":"loginFn"}' >Submit</button>
 </div>
-<p>Selected Value: <span id="testing"></span></p>
+<p>Selected Website: <span id="chosen-website"></span></p>
 ```
 ```javascript
 var FormView = {
     view: 'form',
-    json: '["Pear","Apple","Orange","Grape"]',
+    json: '{"websites":["site1","site2","site3","site4"]}', //each first level index key value name will match either a element id or name attribute, the property value for that index key is some JSON data to bind to that elements child template
     callback:function(props){
-        $('[view="form"]').show();
+        console.log('Form view model loaded successfully');
     },
-    onChange:function(ele,event){
-        $('#testing').html(ele.options[ele.selectedIndex].text);
+    observe: { //multiple observables can be defined, observables are essentially onChange event listeners simplified in an MVVM implementation
+        websites: function(thisElemtent,event){ //each index name value is matched to an element id or name attribute, and the property of that index is a function that will fire when the matching element changes
+                // your function goes here
+                $('#chosen-website').html(thisElemtent.options[thisElemtent.selectedIndex].text);
+        }
     },
-    choseFruit:function(input,ele,data,btn,event){
-        console.log(input);
-        console.log(ele);
-        console.log(data);
-        console.log(btn);
-        console.log(event);
+    // each time a data-bind with 'click' is defined, it expects a named function (example below) matching the string of the 'click' property.
+    loginFn: function(inputsCaptured,formElement,data,btnElement,event){
+        console.log(inputsCaptured); // all inputs, selects, and textarea, user values are returned in this object
+        console.log(formElement); // equivelent to 'this' for the entire view
+        console.log(data); // the same as the data provided in this view model, useful for validating.
+        console.log(btnElement); // equivelent to 'this' for the button clicked
+        console.log(event); // the javascript event object
     }
 };
 $CreateViewBindings(FormView);
@@ -380,18 +388,38 @@ $.fn.msg = function (props) {
 ```
 #### how to use this plugin
 ```javascript
-$('#main').msg({
-    text:'this is a text message confirm dialog box - do you want to continue?', //the question
-    onAccept: function(ele,btn,event){          // what happenes when user clicks Ok
-            console.log('you confirmed!');
-        },
-    className: 'confirm-msgbox',                          // class of the most parent element, style child classes using css selectors from parent
-    onCancel: function(ele,btn,event){          // what happenes when user clicks Ok
-            console.log('you cancelled!');
-        },
-    btnCancelText: 'Stop',                      // choose a button name if you set a class for the parent
-    btnOkText: 'Continue'                       // choose a button name if you set a class for the parent
-});
+    //full use of all options
+    $('#message-box').msg({
+            text:'this is a text message confirm dialog box - do you want to continue?', //the question
+            onAccept: function(ele,btn,event){          // what happenes when user clicks Ok
+                    console.log('you confirmed!');
+                },
+            className: 'confirm-msgbox',                // class of the most parent element, style child classes using css selectors from parent
+            onCancel: function(ele,btn,event){          // what happenes when user clicks Cancel
+                    console.log('you cancelled!');
+                },
+            btnCancelText: 'Stop',                      // choose a button name if you set a class for the parent
+            btnOkText: 'Continue'                       // choose a button name if you set a class for the parent
+    });
+    //using the default layout
+    $('#message-box').msg({
+            text:'this is a text message confirm dialog box - do you want to continue?', //the question
+            onAccept: function(ele,btn,event){          // what happenes when user clicks Ok
+                    console.log('you confirmed!');
+                },
+            onCancel: function(ele,btn,event){          // what happenes when user clicks Cancel
+                    console.log('you cancelled!');
+                }
+    });
+    //using this as a notification window, i.e. the class will hide the button with id of btnOk
+    $('#message-box').msg({
+            text:'you have just been notified of something', //the notification
+            className: 'notification',                // class of the most parent element, style child classes using css selectors from parent
+            onCancel: function(ele,btn,event){          // what happenes when user clicks X
+                    $(ele).remove();                // removes the notification
+                },
+            btnCancelText: 'X'                      // choose a button name if you set a class for the parent
+    });
 ```
 
 
