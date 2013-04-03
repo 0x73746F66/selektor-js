@@ -140,8 +140,6 @@ This example will apply the CSS style property of color a value of green. There 
 ### More methods to be documented;
 
 * $json
-* $jsonStart
-* $jsonEnd
 * $json.fn
 * $bind
 * $bind(config).sort(props)
@@ -242,20 +240,23 @@ $CreateViewBindings(TwitterFeedViewModel);
 
 ```html
 <div view="form">
-    <input type="text" name="username" value="" placeholder="username" required />
+    <input data-bind='{"click":"clearUsername"}' type="text" name="username" value="" placeholder="username" required />
     <input type="password" name="password" value="" placeholder="password" />
     <select name="websites">
         <option data-bind='{"value":"ordered"}'></option>
     </select>
+    <select name="pages">
+        <option data-bind='{"value":"key"}'></option>
+    </select>
     <textarea name="freetext" value="" placeholder="tell me more" ></textarea>
-    <button data-bind='{"click":"loginFn"}' >Submit</button>
+    <button data-bind='{"submit":"loginFn"}' >Submit</button>
 </div>
 <p>Selected Website: <span id="chosen-website"></span></p>
 ```
 ```javascript
 var FormView = {
     view: 'form',
-    json: '{"websites":["site1","site2","site3","site4"]}', //each first level index key value name will match either a element id or name attribute, the property value for that index key is some JSON data to bind to that elements child template
+    json: '{"websites":["site1","site2","site3","site4"],"pages":["home","account","admin"]}', //each first level index key value name will match either a element id or name attribute, the property value for that index key is some JSON data to bind to that elements child template
     callback:function(props){
         console.log('Form view model loaded successfully');
     },
@@ -266,11 +267,16 @@ var FormView = {
         }
     },
     // each time a data-bind with 'click' is defined, it expects a named function (example below) matching the string of the 'click' property.
-    loginFn: function(inputsCaptured,formElement,data,btnElement,event){
+    loginFn: function(inputsCaptured,formElement,data,btnElement,event){ // available objects for 'submit'
         console.log(inputsCaptured); // all inputs, selects, and textarea, user values are returned in this object
         console.log(formElement); // equivelent to 'this' for the entire view
         console.log(data); // the same as the data provided in this view model, useful for validating.
         console.log(btnElement); // equivelent to 'this' for the button clicked
+        console.log(event); // the javascript event object
+    },
+    clearUsername: function(input,thisElement,event) { // available objects for 'click'
+    	console.log(input); // this object has a key matching the name attribute of the element clicked and value matching value of the clicked element
+    	$(thisElement).val(''); // thisElement: equivelent to 'this' for the element clicked
         console.log(event); // the javascript event object
     }
 };
