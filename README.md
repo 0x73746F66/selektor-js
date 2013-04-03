@@ -249,7 +249,7 @@ $CreateViewBindings(TwitterFeedViewModel);
         <option data-bind='{"value":"key"}'></option>
     </select>
     <textarea name="freetext" value="" placeholder="tell me more" ></textarea>
-    <button data-bind='{"submit":"loginFn"}' >Submit</button>
+    <button type="button" data-bind='{"submit":"loginFn"}' >Submit</button>
 </div>
 <p>Selected Website: <span id="chosen-website"></span></p>
 ```
