@@ -187,7 +187,7 @@ $json({
           <td data-bind='{"formatNumber":"tw_id","formatNumberClass":"center"}'></td>
           <td data-bind='{"text":"tw_text"}'></td>
           <td data-bind='{"img":"tw_profile_pic","imgClass":"pip","text":"tw_screen_name"}'></td>
-          <td data-bind='{"href":"tw_profile_pic","hrefText":"Pic URL","hrefClass":"bold"}'></td>
+          <td data-bind='{"anchor":"tw_profile_pic","anchorText":"Pic URL","anchorClass":"bold"}'></td>
           <td data-bind='{"text":"tw_user_id"}'></td>
           <td data-bind='{"text":"tw_user_name","textClass":"center"}'></td>
       </tr>
